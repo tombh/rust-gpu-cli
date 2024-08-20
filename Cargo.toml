@@ -1,0 +1,28 @@
+[package]
+name = "rust-gpu-compiler"
+description = "Compile Rust shaders to SPIR-V. Runs as a daemon."
+version = "0.0.1"
+authors = ["Tom Bcukley-Houston"]
+edition = "2018"
+
+[features]
+default = ["use-compiled-tools"]
+use-installed-tools = ["spirv-builder/use-installed-tools"]
+use-compiled-tools = ["spirv-builder/use-compiled-tools"]
+
+[dependencies]
+clap = { version = "4.5.16", features = ["derive"] }
+spirv-builder = { git = "https://github.com/EmbarkStudios/rust-gpu", rev = "54f6978", features = ["watch"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+restriction = "warn"
+blanket_clippy_restriction_lints = "allow"
