@@ -2,7 +2,7 @@
 
 _Write GPU shaders in Rust_
 
-Based on Embark Studios' `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
+Based on `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
 
 But here's the basic idea:
 
@@ -24,7 +24,7 @@ Usage: rust-gpu-compiler [OPTIONS] <PATH_TO_CRATE> [OUTPUT_PATH]
 
 Arguments:
   <PATH_TO_CRATE>  Shader crate to compile
-  [OUTPUT_PATH]    If set, combined SPIR-V and entrypoint metadata will be written to this file on succesful compile
+  [OUTPUT_PATH]    If set, shader module will be copied here. Otherwise shader module is copied to the root of the shader crate at `compiled/[crate name].spv`, see logs for exact path
 
 Options:
   -t, --target <TARGET>
@@ -34,7 +34,9 @@ Options:
       --debug
           Compile shaders in debug mode
       --capability <CAPABILITY>
-          Enables the provided SPIR-V capability
+          Enables the provided SPIR-V capabilities. See: `impl core::str::FromStr for spirv_builder::Capability`
+      --extension <EXTENSION>
+          Enables the provided SPIR-V extensions. See https://github.com/KhronosGroup/SPIRV-Registry for all extensions
       --multimodule
           Compile one .spv file per entry point
       --spirv-metadata <SPIRV_METADATA>
@@ -57,6 +59,7 @@ Options:
           Print help
   -V, --version
           Print version
+
 ```
 
 ## Tips
@@ -67,7 +70,7 @@ Options:
 
 - `rust-gpu` recommends including itself as a dependency of your main project. This generally works, but seeing as it is still in beta, it does have some rough edges and I've found that trying to debug them amongst my own projects' bugs, can make things overly complicated.
 - `rust-gpu` pins to an entire Rust toolchain which can add unnecessary restrictions on your own project.
-- I wonder if the compiler is a separate binary, then this is a better user experience anyway?
+- I wonder if the compiler were a separate binary, then this it would a better user experience anyway?
 
 ## TODO
 
