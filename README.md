@@ -2,7 +2,7 @@
 
 _Write GPU shaders in Rust_
 
-Based on Embark Studios' `rust-gpu` project: https://github.com/EmbarkStudios/rust-gpu. See their docs for details on how to actually write Rust shaders: https://embarkstudios.github.io/rust-gpu/book
+Based on Embark Studios' `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
 
 But here's the basic idea:
 

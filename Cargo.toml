@@ -12,7 +12,7 @@ use-compiled-tools = ["spirv-builder/use-compiled-tools"]
 
 [dependencies]
 clap = { version = "4.5.16", features = ["derive"] }
-spirv-builder = { git = "https://github.com/EmbarkStudios/rust-gpu", rev = "54f6978", features = ["watch"] }
+spirv-builder = { git = "https://github.com/Rust-GPU/rust-gpu", rev = "4c633aec", features = ["watch"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
