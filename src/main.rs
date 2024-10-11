@@ -15,6 +15,8 @@
 
 mod builder;
 
+use std::time::Duration;
+
 use clap::Parser;
 use tracing_subscriber;
 
@@ -24,7 +26,7 @@ fn main() {
     tracing_subscriber::fmt::init();
 
     let args = ShaderBuilder::parse();
-    args.build_shader_daemon().expect("Compiler daemon error");
+    args.start_shader_daemon();
 
     loop {
         std::thread::park();

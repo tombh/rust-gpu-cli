@@ -1,5 +1,7 @@
 use std::{borrow::Borrow, path::PathBuf, str::FromStr};
 
+use spirv_builder::CompileResult;
+
 #[derive(Debug, Clone, clap::Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct ShaderBuilder {
@@ -122,42 +124,66 @@ impl ShaderBuilder {
     }
 
     /// Starts watching a shader directory and compiles on changes
-    pub fn build_shader_daemon(
-        &self,
-    ) -> Result<spirv_builder::CompileResult, spirv_builder::SpirvBuilderError> {
+    pub fn start_shader_daemon(&self) {
         tracing::info!("Starting daemon");
 
         let builder = self.make_builder();
+
         let source = self.path_to_crate.clone();
         let is_custom_output_path = self.output_path.is_some();
-        let destination = match self.output_path.borrow() {
+        let destination_path = match self.output_path.borrow() {
             Some(path) => path.clone(),
             None => source.join("compiled"),
         };
+        let destination_string = destination_path.into_os_string().into_string().expect("");
+        let destination_for_watcher = destination_string.clone();
 
-        builder.watch(move |compile_result| {
-            match &compile_result.module {
-                spirv_builder::ModuleResult::SingleModule(single) => {
-                    let mut copy_to = destination.clone();
-                    if !is_custom_output_path {
-                        std::fs::create_dir_all(copy_to)
-                            .expect("Couldn't create destination directory");
-                        let filename = single.file_name().expect("Couldn't extract filename");
-                        copy_to = destination.join(filename);
-                    };
-                    std::fs::copy(single, copy_to.clone())
-                        .expect("Couldn't copy shader to destination");
-                    tracing::info!("✅ Compiled to: {copy_to:?}");
-                }
+        let first_compile_result = builder
+            .watch(move |compile_result| {
+                // Need a copy for every time this is called
+                let destination_clone = destination_for_watcher.clone();
+                Self::handle_compile_result(
+                    compile_result,
+                    is_custom_output_path,
+                    destination_clone,
+                );
+            })
+            .expect("First compile failed");
 
-                spirv_builder::ModuleResult::MultiModule(multi) => {
-                    tracing::info!("✅ Compile success (multiple module files)");
-                    for (k, module) in multi {
-                        tracing::info!("{k:}: {module:?}");
-                    }
-                    unimplemented!("Multimodule support not yet implemented");
+        Self::handle_compile_result(
+            first_compile_result,
+            is_custom_output_path,
+            destination_string,
+        );
+    }
+
+    fn handle_compile_result(
+        compile_result: CompileResult,
+        is_custom_output_path: bool,
+        destination: String,
+    ) {
+        let destination_path: PathBuf = destination.into();
+        match &compile_result.module {
+            spirv_builder::ModuleResult::SingleModule(single) => {
+                let mut copy_to = destination_path.clone();
+                if !is_custom_output_path {
+                    std::fs::create_dir_all(copy_to)
+                        .expect("Couldn't create destination directory");
+                    let filename = single.file_name().expect("Couldn't extract filename");
+                    copy_to = destination_path.join(filename);
+                };
+                std::fs::copy(single, copy_to.clone())
+                    .expect("Couldn't copy shader to destination");
+                tracing::info!("✅ Compiled to: {copy_to:?}");
+            }
+
+            spirv_builder::ModuleResult::MultiModule(multi) => {
+                tracing::info!("✅ Compile success (multiple module files)");
+                for (k, module) in multi {
+                    tracing::info!("{k:}: {module:?}");
                 }
-            };
-        })
+                unimplemented!("Multimodule support not yet implemented");
+            }
+        };
     }
 }

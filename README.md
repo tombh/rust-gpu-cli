@@ -73,8 +73,16 @@ Options:
 
 - [ ] Will probably need to add multi-module support, see: https://github.com/EmbarkStudios/rust-gpu/issues/539
 - [ ] Is it possible to make this into a single, publishable, standalone binary?
-- [ ] Always force build on first run? The `rust-gpu` watcher only rebuilds if the underlying shader code has changed. But changing the CLI args here should also be cause for re-compiling.
+- [x] Always force build on first run? The `rust-gpu` watcher only rebuilds if the underlying shader code has changed. But changing the CLI args here should also be cause for re-compiling.
 
 ## Similar Projects
 
 - The original CLI argument code for this project was taken from Bevy's https://github.com/Bevy-Rust-GPU/rust-gpu-builder
+- This PR enables a dedicated CLI tool for building shaders:
+  https://github.com/Bevy-Rust-GPU/rust-gpu-builder/pull/8
+
+## Other `rust-gpu` Projects
+
+- Issue discussing lack of docs: https://github.com/EmbarkStudios/rust-gpu/issues/1096
+- https://github.com/EmbarkStudios/kajiya
+- https://github.com/Patryk27/strolle
