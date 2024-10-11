@@ -1,14 +1,18 @@
 [package]
 name = "rust-gpu-compiler"
+repository="https://github.com/tombh/rust-gpu-compiler"
 description = "Compile Rust shaders to SPIR-V. Runs as a daemon."
 version = "0.0.1"
 authors = ["Tom Bcukley-Houston"]
+license = "Apache, MIT"
 edition = "2018"
+categories = ["compilers", "graphics"]
+keywords = ["gpu", "shaders"]
 
 [features]
-default = ["use-compiled-tools"]
-use-installed-tools = ["spirv-builder/use-installed-tools"]
-use-compiled-tools = ["spirv-builder/use-compiled-tools"]
+default = ["compiled-tools"]
+installed-tools = ["spirv-builder/use-installed-tools"]
+compiled-tools = ["spirv-builder/use-compiled-tools"]
 
 [dependencies]
 clap = { version = "4.5.16", features = ["derive"] }
@@ -16,13 +20,21 @@ spirv-builder = { git = "https://github.com/Rust-GPU/rust-gpu", rev = "4c633aec"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
-[workspace.lints.rust]
+[lints.rust]
 missing_docs = "warn"
 
-[workspace.lints.clippy]
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
-restriction = "warn"
-blanket_clippy_restriction_lints = "allow"
+[lints.clippy]
+all = { level = "warn", priority = 0 }
+pedantic = { level = "warn", priority = 0 }
+nursery = { level = "warn", priority = 0 }
+cargo = { level = "warn", priority = 0 }
+restriction = { level = "warn", priority = 0 }
+blanket_clippy_restriction_lints = { level = "allow", priority = 1 }
+
+expect_used = { level = "allow", priority = 1 }
+absolute_paths = { level = "allow", priority = 1 }
+implicit_return = { level = "allow", priority = 1 }
+single_call_fn = { level = "allow", priority = 1 }
+question_mark_used = { level = "allow", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 1 }
+non_ascii_literal = { level = "allow", priority = 1 }

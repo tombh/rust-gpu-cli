@@ -1,10 +1,19 @@
-use std::{borrow::Borrow, path::PathBuf, str::FromStr};
+//! Builder daemon to compile Rust shaders into SPIR-V.
+
+use core::borrow::Borrow;
+use core::str::FromStr;
+use std::path::PathBuf;
 
 use spirv_builder::CompileResult;
 
+/// CLI arguments
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "We're just a simple CLI app, we don't need a state machine"
+)]
 #[derive(Debug, Clone, clap::Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct ShaderBuilder {
+pub struct ShaderCLIArgs {
     /// Shader crate to compile.
     path_to_crate: PathBuf,
 
@@ -78,10 +87,10 @@ pub struct ShaderBuilder {
     preserve_bindings: bool,
 }
 
-impl ShaderBuilder {
+impl ShaderCLIArgs {
     /// Clap value parser for `SpirvMetadata`.
-    fn spirv_metadata(s: &str) -> Result<spirv_builder::SpirvMetadata, clap::Error> {
-        match s {
+    fn spirv_metadata(metadata: &str) -> Result<spirv_builder::SpirvMetadata, clap::Error> {
+        match metadata {
             "none" => Ok(spirv_builder::SpirvMetadata::None),
             "name-variables" => Ok(spirv_builder::SpirvMetadata::NameVariables),
             "full" => Ok(spirv_builder::SpirvMetadata::Full),
@@ -90,24 +99,15 @@ impl ShaderBuilder {
     }
 
     /// Clap value parser for `Capability`.
-    fn spirv_capability(s: &str) -> Result<spirv_builder::Capability, clap::Error> {
-        match spirv_builder::Capability::from_str(s) {
-            Ok(capability) => Ok(capability),
-            Err(_) => Err(clap::Error::new(clap::error::ErrorKind::InvalidValue)),
-        }
+    fn spirv_capability(capability: &str) -> Result<spirv_builder::Capability, clap::Error> {
+        spirv_builder::Capability::from_str(capability).map_or_else(
+            |()| Err(clap::Error::new(clap::error::ErrorKind::InvalidValue)),
+            Ok,
+        )
     }
 
+    /// Create the SPIR-V builder from the given CLI args.
     fn make_builder(&self) -> spirv_builder::SpirvBuilder {
-        // Hack(from `rust-gpu`):
-        // `spirv_builder` builds into a custom directory if running under cargo, to not
-        // deadlock, and the default target directory if not. However, packages like `proc-macro2`
-        // have different configurations when being built here vs. when building
-        // `rustc_codegen_spirv`` normally, so we *want* to build into a separate target directory, to
-        // not have to rebuild half the crate graph every time we run. So, pretend we're running
-        // under Cargo by setting these environment variables.
-        std::env::set_var("OUT_DIR", env!("OUT_DIR"));
-        std::env::set_var("PROFILE", env!("PROFILE"));
-
         let mut builder = spirv_builder::SpirvBuilder::new(&self.path_to_crate, &self.target)
             .deny_warnings(self.deny_warnings)
             .release(!self.debug)
@@ -141,19 +141,22 @@ impl ShaderBuilder {
 
         let source = self.path_to_crate.clone();
         let is_custom_output_path = self.output_path.is_some();
-        let destination_path = match self.output_path.borrow() {
-            Some(path) => path.clone(),
-            None => source.join("compiled"),
-        };
-        let destination_string = destination_path.into_os_string().into_string().expect("");
+        let destination_path = self
+            .output_path
+            .borrow()
+            .as_ref()
+            .map_or_else(|| source.join("compiled"), core::clone::Clone::clone);
+        let destination_string = destination_path
+            .into_os_string()
+            .into_string()
+            .expect("Couldn't parse destination path");
         let destination_for_watcher = destination_string.clone();
 
         let first_compile_result = builder
             .watch(move |compile_result| {
-                // Need a copy for every time this is called
                 let destination_clone = destination_for_watcher.clone();
                 Self::handle_compile_result(
-                    compile_result,
+                    &compile_result,
                     is_custom_output_path,
                     destination_clone,
                 );
@@ -161,18 +164,23 @@ impl ShaderBuilder {
             .expect("First compile failed");
 
         Self::handle_compile_result(
-            first_compile_result,
+            &first_compile_result,
             is_custom_output_path,
             destination_string,
         );
     }
 
+    /// Handle the result of a Rust-to-SPIRV compilation.
     fn handle_compile_result(
-        compile_result: CompileResult,
+        compile_result: &CompileResult,
         is_custom_output_path: bool,
         destination: String,
     ) {
         let destination_path: PathBuf = destination.into();
+        #[expect(
+            clippy::pattern_type_mismatch,
+            reason = "`single` is a value but `&compile_result.module` is a ref?"
+        )]
         match &compile_result.module {
             spirv_builder::ModuleResult::SingleModule(single) => {
                 let mut copy_to = destination_path.clone();
@@ -187,10 +195,11 @@ impl ShaderBuilder {
                 tracing::info!("✅ Compiled to: {copy_to:?}");
             }
 
+            #[expect(clippy::unimplemented, reason = "Remove once we support multimodules")]
             spirv_builder::ModuleResult::MultiModule(multi) => {
                 tracing::info!("✅ Compile success (multiple module files)");
-                for (k, module) in multi {
-                    tracing::info!("{k:}: {module:?}");
+                for (key, module) in multi {
+                    tracing::info!("{key:}: {module:?}");
                 }
                 unimplemented!("Multimodule support not yet implemented");
             }
