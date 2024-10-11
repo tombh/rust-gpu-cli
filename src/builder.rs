@@ -24,9 +24,15 @@ pub struct ShaderBuilder {
     #[arg(long, default_value = "false")]
     debug: bool,
 
-    /// Enables the provided SPIR-V capability.
+    /// Enables the provided SPIR-V capabilities.
+    /// See: `impl core::str::FromStr for spirv_builder::Capability`
     #[arg(long, value_parser=Self::spirv_capability)]
     capability: Vec<spirv_builder::Capability>,
+
+    /// Enables the provided SPIR-V extensions.
+    /// See https://github.com/KhronosGroup/SPIRV-Registry for all extensions
+    #[arg(long)]
+    extension: Vec<String>,
 
     /// Compile one .spv file per entry point.
     #[arg(long, default_value = "false")]
@@ -118,6 +124,10 @@ impl ShaderBuilder {
 
         for capability in &self.capability {
             builder = builder.capability(*capability);
+        }
+
+        for extension in &self.extension {
+            builder = builder.extension(extension);
         }
 
         builder
