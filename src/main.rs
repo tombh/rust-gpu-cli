@@ -3,6 +3,7 @@
 #![feature(lint_reasons)]
 
 mod builder;
+mod validate;
 
 use clap::Parser;
 

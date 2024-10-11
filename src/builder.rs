@@ -6,6 +6,8 @@ use std::path::PathBuf;
 
 use spirv_builder::CompileResult;
 
+use crate::validate::validate;
+
 /// CLI arguments
 #[expect(
     clippy::struct_excessive_bools,
@@ -85,6 +87,22 @@ pub struct ShaderCLIArgs {
     /// Preserve unused descriptor bindings. Useful for reflection.
     #[arg(long, default_value = "false")]
     preserve_bindings: bool,
+
+    /// Validate the compiled SPIR-V binary and, optionally, its WGSL version using `naga`
+    /// Options:
+    ///   - "spirv": validates the generated SPIR-V binary
+    ///   - "wgsl": cross-compiles the SPIR-V binary to WGSL, and also validates the WGSL
+    #[arg(long, value_parser=Self::validation, verbatim_doc_comment)]
+    validate: Option<ValidationOption>,
+}
+
+/// Options for SPIR-V validation.
+#[derive(Clone, Copy, Debug)]
+enum ValidationOption {
+    /// Only validate the generated SPIR-V module.
+    Spriv,
+    /// Also create a WGSL version of the SPIR-V module and validate that WGSL.
+    Wgsl,
 }
 
 impl ShaderCLIArgs {
@@ -94,6 +112,15 @@ impl ShaderCLIArgs {
             "none" => Ok(spirv_builder::SpirvMetadata::None),
             "name-variables" => Ok(spirv_builder::SpirvMetadata::NameVariables),
             "full" => Ok(spirv_builder::SpirvMetadata::Full),
+            _ => Err(clap::Error::new(clap::error::ErrorKind::InvalidValue)),
+        }
+    }
+
+    /// Clap value parser for validation options.
+    fn validation(validation: &str) -> Result<ValidationOption, clap::Error> {
+        match validation {
+            "spirv" => Ok(ValidationOption::Spriv),
+            "wgsl" => Ok(ValidationOption::Wgsl),
             _ => Err(clap::Error::new(clap::error::ErrorKind::InvalidValue)),
         }
     }
@@ -134,6 +161,7 @@ impl ShaderCLIArgs {
     }
 
     /// Starts watching a shader directory and compiles on changes
+    #[expect(clippy::expect_used, reason = "We can panic at startup")]
     pub fn start_shader_daemon(&self) {
         tracing::info!("Starting daemon");
 
@@ -152,6 +180,8 @@ impl ShaderCLIArgs {
             .expect("Couldn't parse destination path");
         let destination_for_watcher = destination_string.clone();
 
+        let validation = self.validate;
+
         let first_compile_result = builder
             .watch(move |compile_result| {
                 let destination_clone = destination_for_watcher.clone();
@@ -159,6 +189,7 @@ impl ShaderCLIArgs {
                     &compile_result,
                     is_custom_output_path,
                     destination_clone,
+                    validation,
                 );
             })
             .expect("First compile failed");
@@ -167,6 +198,7 @@ impl ShaderCLIArgs {
             &first_compile_result,
             is_custom_output_path,
             destination_string,
+            validation,
         );
     }
 
@@ -175,6 +207,7 @@ impl ShaderCLIArgs {
         compile_result: &CompileResult,
         is_custom_output_path: bool,
         destination: String,
+        maybe_validation: Option<ValidationOption>,
     ) {
         let destination_path: PathBuf = destination.into();
         #[expect(
@@ -184,15 +217,36 @@ impl ShaderCLIArgs {
         match &compile_result.module {
             spirv_builder::ModuleResult::SingleModule(single) => {
                 let mut copy_to = destination_path.clone();
+
+                #[expect(
+                    clippy::expect_used,
+                    reason = "There's no way to continue if we can't create the destination directory"
+                )]
                 if !is_custom_output_path {
                     std::fs::create_dir_all(copy_to)
                         .expect("Couldn't create destination directory");
                     let filename = single.file_name().expect("Couldn't extract filename");
                     copy_to = destination_path.join(filename);
                 };
+
+                #[expect(
+                    clippy::expect_used,
+                    reason = "There's no way to continue if copying fails"
+                )]
                 std::fs::copy(single, copy_to.clone())
                     .expect("Couldn't copy shader to destination");
+
                 tracing::info!("✅ Compiled to: {copy_to:?}");
+
+                if let Some(validation) = maybe_validation {
+                    let validation_result = match validation {
+                        ValidationOption::Spriv => validate(single, false),
+                        ValidationOption::Wgsl => validate(single, true),
+                    };
+                    if let Err(error) = validation_result {
+                        tracing::error!("{error}");
+                    }
+                }
             }
 
             #[expect(clippy::unimplemented, reason = "Remove once we support multimodules")]

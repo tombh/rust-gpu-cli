@@ -5,7 +5,7 @@ description = "Compile Rust shaders to SPIR-V. Runs as a daemon."
 version = "0.0.1"
 authors = ["Tom Bcukley-Houston"]
 license = "Apache, MIT"
-edition = "2018"
+edition = "2021"
 categories = ["compilers", "graphics"]
 keywords = ["gpu", "shaders"]
 
@@ -15,7 +15,9 @@ installed-tools = ["spirv-builder/use-installed-tools"]
 compiled-tools = ["spirv-builder/use-compiled-tools"]
 
 [dependencies]
+anyhow = "1.0.89"
 clap = { version = "4.5.16", features = ["derive"] }
+naga = { version = "22.1.0", features = ["spv-in", "wgsl-out", "wgsl-in"] }
 spirv-builder = { git = "https://github.com/Rust-GPU/rust-gpu", rev = "4c633aec", features = ["watch"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
@@ -31,10 +33,12 @@ cargo = { level = "warn", priority = 0 }
 restriction = { level = "warn", priority = 0 }
 blanket_clippy_restriction_lints = { level = "allow", priority = 1 }
 
-expect_used = { level = "allow", priority = 1 }
 absolute_paths = { level = "allow", priority = 1 }
 implicit_return = { level = "allow", priority = 1 }
 single_call_fn = { level = "allow", priority = 1 }
 question_mark_used = { level = "allow", priority = 1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 non_ascii_literal = { level = "allow", priority = 1 }
+float_arithmetic = { level = "allow", priority = 1 }
+as_conversions = { level = "allow", priority = 1 }
+cast_precision_loss = { level = "allow", priority = 1 }

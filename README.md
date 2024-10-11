@@ -2,7 +2,7 @@
 
 _Write GPU shaders in Rust_
 
-Based on `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
+Based on the `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
 
 But here's the basic idea:
 
@@ -18,8 +18,6 @@ pub fn main_fs(output: &mut Vec4) {
 ## Usage
 
 ```
-Compile Rust shaders to SPIR-V. Runs as a daemon.
-
 Usage: rust-gpu-compiler [OPTIONS] <PATH_TO_CRATE> [OUTPUT_PATH]
 
 Arguments:
@@ -55,11 +53,15 @@ Options:
           Skip checking standard uniform / storage buffer layout. Overrides any --relax-block-layout or --scalar-block-layout option
       --preserve-bindings
           Preserve unused descriptor bindings. Useful for reflection
+      --validate <VALIDATE>
+          Validate the compiled SPIR-V binary and, optionally, its WGSL version using `naga`
+          Options:
+            - "spirv": validates the generated SPIR-V binary
+            - "wgsl": cross-compiles the SPIR-V binary to WGSL, and also validates the WGSL
   -h, --help
           Print help
   -V, --version
           Print version
-
 ```
 
 ## Tips
