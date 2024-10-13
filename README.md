@@ -1,8 +1,8 @@
-# Rust GPU Shader Compiler
+# Rust GPU Shader Compiler CLI Tool
 
 _Write GPU shaders in Rust_
 
-Based on the `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
+Based on the `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. This project adds a CLI "frontend" to perhaps make using `rust-gpu` easier. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
 
 But here's the basic idea:
 

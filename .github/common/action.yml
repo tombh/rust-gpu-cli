@@ -1,0 +1,5 @@
+steps:
+  - uses: Swatinem/rust-cache@v2
+  - uses: extractions/setup-just@v1
+    with:
+      just-version: 1.5.0

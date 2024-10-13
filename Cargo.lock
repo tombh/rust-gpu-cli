@@ -681,7 +681,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-gpu-compiler"
+name = "rust-gpu-cli"
 version = "0.0.1"
 dependencies = [
  "anyhow",
