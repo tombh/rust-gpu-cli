@@ -1,4 +1,4 @@
-# Should always match the Rust toolchain of https://github.com/embarkstudios/rust-gpu
+# Should always match the Rust toolchain of https://github.com/Rust-GPU/rust-gpu/blob/main/rust-toolchain.toml
 [toolchain]
 channel = "nightly-2023-09-30"
 components = ["rust-src", "rustc-dev", "llvm-tools"]
