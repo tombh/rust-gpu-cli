@@ -1,0 +1,92 @@
+name: Publish New Version Of Rust GPU CLI
+
+on: pull_request
+
+# on:
+# release:
+#   types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    name: ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os_name: linux-aarch64
+            os: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+            codegen: librustc_codegen_spirv.so
+
+          # - os_name: linux-x86_64
+          #   os: ubuntu-20.04
+          #   target: x86_64-unknown-linux-gnu
+          #   codegen: librustc_codegen_spirv.so
+          # - os_name: windows-x86_64
+          #   os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   codegen: rustc_codegen_spirv.dll
+          # - os_name: macOS-aarch64
+          #   os: macos-latest
+          #   target: aarch64-apple-darwin
+          #   codegen: librustc_codegen_spirv.dylib
+
+          # - os_name: macOS-x86_64
+          #   os: macOS-latest
+          #   target: x86_64-apple-darwin
+          #   codegen_ext: dylib
+    steps:
+      - run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install Rust components
+        run: |
+          # rustup component add --target ${{ matrix.platform.target }} rust-src rustc-dev
+          rustup component add rust-src rustc-dev llvm-tools
+          rustup toolchain install nightly-2023-09-30
+          rustup default nightly-2023-09-30
+          rustup target add ${{ matrix.platform.target }}
+          echo "Installing components..."
+          rustup component add rust-src rustc-dev-aarch64-unknown-linux-gnu llvm-tools
+          rustup default stable
+          rustup component add rust-src
+          rustup default nightly-2023-09-30
+          echo "...done"
+      - uses: actions/checkout@v4
+      #     rustup component list
+      # - name: Cache cargo & target directories
+      #   uses: Swatinem/rust-cache@v2
+      #   with:
+      #     key: bust
+      # - name: Build binaries
+      #   uses: tombh/actions-rust-cross@v0
+      #   with:
+      #     command: "build"
+      #     target: ${{ matrix.platform.target }}
+      #     toolchain: nightly-2023-09-30
+      #     args: "--locked --release"
+      #     strip: true
+      - run: |
+          rm rust-toolchain.toml
+          CROSS_NO_WARNINGS=0 cross -v build --locked --release --target ${{ matrix.platform.target }}
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: rust-gpu-cli
+          extra-files: target/${{ matrix.platform.target }}/release/${{ matrix.platform.codegen }}
+          changes-file: "" # The location of the CHANGELOG file
+          target: ${{ matrix.platform.target }}
+
+  rpm:
+    name: "RPM"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/common
+      - name: Create RPM
+        run: gh release view

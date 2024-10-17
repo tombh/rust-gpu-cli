@@ -1,6 +1,6 @@
 [package]
-name = "rust-gpu-compiler"
-repository="https://github.com/tombh/rust-gpu-compiler"
+name = "rust-gpu-cli"
+repository="https://github.com/tombh/rust-gpu-cli"
 description = "Compile Rust shaders to SPIR-V. Runs as a daemon."
 version = "0.0.1"
 authors = ["Tom Bcukley-Houston"]
@@ -19,8 +19,14 @@ anyhow = "1.0.89"
 clap = { version = "4.5.16", features = ["derive"] }
 naga = { version = "22.1.0", features = ["spv-in", "wgsl-out", "wgsl-in"] }
 spirv-builder = { git = "https://github.com/Rust-GPU/rust-gpu", rev = "4c633aec", features = ["watch"] }
+toml = "0.8.19"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
+
+[workspace.metadata.cross.target.aarch64-unknown-linux-gnu]
+# As of October 2024 the `cross` images are too old to compile the `spirv-tools-sys` crate. So here
+# we pin to a newer one.
+image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu@sha256:9808d7b7563a6334042c00555e473d0e0be46a171e3426301030118807280c86"
 
 [lints.rust]
 missing_docs = "warn"
@@ -42,3 +48,12 @@ non_ascii_literal = { level = "allow", priority = 1 }
 float_arithmetic = { level = "allow", priority = 1 }
 as_conversions = { level = "allow", priority = 1 }
 cast_precision_loss = { level = "allow", priority = 1 }
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/rust-gpu-cli", dest = "/usr/bin/rust-gpu-cli", mode = "0755" },
+    { source = "target/release/librustc_codegen_spirv.so", dest = "/usr/lib64/librustc_codegen_spirv.so", mode = "0755" },
+    { source = "LICENSE-APACHE", dest = "/usr/share/doc/rust-gpu-cli/LICENSE-APACHE", doc = true, mode = "0644" },
+    { source = "LICENSE-MIT", dest = "/usr/share/doc/rust-gpu-cli/LICENSE-MIT", doc = true, mode = "0644" },
+    { source = "README.md", dest = "/usr/share/doc/rust-gpu-cli/README.md", doc = true, mode = "0644" }
+]

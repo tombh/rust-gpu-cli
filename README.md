@@ -1,8 +1,8 @@
-# Rust GPU Shader Compiler
+# Rust GPU Shader Compiler CLI Tool
 
 _Write GPU shaders in Rust_
 
-Based on the `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
+Based on the `rust-gpu` project: https://github.com/Rust-GPU/rust-gpu. This project adds a CLI "frontend" to perhaps make using `rust-gpu` easier. See their docs for details on how to actually write Rust shaders: https://rust-gpu.github.io/rust-gpu/book/
 
 But here's the basic idea:
 
@@ -14,6 +14,12 @@ pub fn main_fs(output: &mut Vec4) {
     *output = vec4(1.0, 0.0, 0.0, 1.0);
 }
 ```
+
+## Installation
+
+- `rust-gpu` requires a specific version of Rust nightly and certain components. Install them with:
+  `rustup toolchain install nightly-2023-09-30 --component rust-src,rustc-dev,llvm-tools`
+  Double check that the nightly version matches the `channel` field in the `rust-toolchain.toml` in this repo.
 
 ## Usage
 
@@ -79,6 +85,8 @@ Options:
 - [ ] Will probably need to add multi-module support, see: https://github.com/EmbarkStudios/rust-gpu/issues/539
 - [ ] Is it possible to make this into a single, publishable, standalone binary?
 - [x] Always force build on first run? The `rust-gpu` watcher only rebuilds if the underlying shader code has changed. But changing the CLI args here should also be cause for re-compiling.
+- [ ] A `rust-gpu.toml` to set requirements for the shader. Eg; instead of setting `--target spirv-unknown-spv1.3` on the CLI, we can set `target = spirv-unknown-spv1.3` in the root config of the shader crate.
+- [ ] Check shader's `spirv-std` to see if matches the compiler's version and issue a warning if not.
 
 ## Similar Projects
 
