@@ -1,3 +1,6 @@
+> [!NOTE]
+> I'm no longer working on this. The new blessed project is https://github.com/Rust-GPU/cargo-gpu
+
 # Rust GPU Shader Compiler CLI Tool
 
 _Write GPU shaders in Rust_
